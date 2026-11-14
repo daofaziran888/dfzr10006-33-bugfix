@@ -17,6 +17,9 @@ class Settings:
     )
     page_size_default: int = 20
     page_size_max: int = 200
+    # 平台当前值班人：请求没有显式携带操作人时按此身份处理，
+    # 与前端顶部的「当前值班」保持一致。
+    default_operator: str = "值班管理员"
 
 
 settings = Settings()

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Generic, TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
 
@@ -16,16 +16,34 @@ class PageResult(BaseModel, Generic[T]):
 
 
 class ActionResult(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     ok: bool
     message: str
     entry: dict[str, Any] | None = None
+    code: str | None = None
+    changed: bool | None = None
 
 
 class EntryPayload(BaseModel):
-    """登记或修改一条业务记录时提交的字段集合。"""
+    """登记或修改一条业务记录时提交的字段集合。
+
+    除了约定的 values 容器，也接受把字段直接平铺在请求体里：
+    {"action": "切换策略", "operator": "李工"} 与
+    {"values": {"action": "切换策略", "operator": "李工"}} 等价。
+    """
+
+    model_config = ConfigDict(extra="allow")
 
     values: dict[str, Any] = Field(default_factory=dict)
     remark: str | None = None
+
+    @property
+    def all_values(self) -> dict[str, Any]:
+        merged = dict(self.values)
+        for key, value in (self.model_extra or {}).items():
+            merged.setdefault(key, value)
+        return merged
 
 
 

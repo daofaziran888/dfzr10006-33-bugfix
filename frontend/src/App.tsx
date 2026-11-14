@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link, Route, Routes } from 'react-router-dom'
+
+import { setOperator, useOperator } from '@/stores/session'
 
 import Overview from './views/Overview'
 import RegistryView from './views/registry'
@@ -17,12 +19,21 @@ import GatewayView from './views/gateway'
 import MetricView from './views/metric'
 import WhitelistView from './views/whitelist'
 import BalanceView from './views/balance'
+import BalanceFailoverView from './views/balance/FailoverDetail'
 import RollbackView from './views/rollback'
 
 const navItems = [{ label: "运营概览", path: "/" }, { label: "服务注册发现", path: "/registry" }, { label: "查询路由分发", path: "/router" }, { label: "结果缓存加速", path: "/cache" }, { label: "调用限流降级", path: "/limiter" }, { label: "服务编排组合", path: "/orchestra" }, { label: "调用链追踪", path: "/trace" }, { label: "服务健康诊断", path: "/diagnose" }, { label: "数据接口契约", path: "/schema" }, { label: "数据订阅推送", path: "/subscribe" }, { label: "数据加工转换", path: "/transform" }, { label: "数据模拟服务", path: "/mock" }, { label: "接入网关管理", path: "/gateway" }, { label: "服务指标采集", path: "/metric" }, { label: "调用来源管理", path: "/whitelist" }, { label: "负载均衡策略", path: "/balance" }, { label: "服务版本回退", path: "/rollback" }]
 
 export default function App() {
-  const [operator] = useState('值班管理员')
+  const operator = useOperator()
+  const [switching, setSwitching] = useState(false)
+  const [draft, setDraft] = useState(operator)
+
+  function submitOperator(event: FormEvent) {
+    event.preventDefault()
+    setOperator(draft)
+    setSwitching(false)
+  }
 
   return (
     <div className="app-shell">
@@ -39,7 +50,29 @@ export default function App() {
       <main className="app-main">
         <header className="app-head">
           <span className="head-desc">面向业务系统的一站式实时数据服务总线平台。覆盖数据服务注册与发现、查询路由分发、结果缓存加速、调用限流降级、服务编排组合、调用链追踪与服务健康诊断的完整数据服务链路。</span>
-          <span className="head-user">当前值班：{operator}</span>
+          {switching ? (
+            <form className="head-user" onSubmit={submitOperator}>
+              <input
+                className="operator-input"
+                value={draft}
+                autoFocus
+                onChange={(event) => setDraft(event.target.value)}
+                aria-label="切换当前操作人"
+              />
+              <button className="link" type="submit">确定</button>
+            </form>
+          ) : (
+            <span className="head-user">
+              当前值班：{operator}
+              <button
+                className="link operator-switch"
+                type="button"
+                onClick={() => { setDraft(operator); setSwitching(true) }}
+              >
+                切换身份
+              </button>
+            </span>
+          )}
         </header>
         <Routes>
           <Route path="/" element={<Overview />} />
@@ -58,6 +91,7 @@ export default function App() {
           <Route path="/metric" element={<MetricView />} />
           <Route path="/whitelist" element={<WhitelistView />} />
           <Route path="/balance" element={<BalanceView />} />
+          <Route path="/balance/:entryId/failover" element={<BalanceFailoverView />} />
           <Route path="/rollback" element={<RollbackView />} />
         </Routes>
       </main>
